@@ -8,7 +8,7 @@ import (
 func InitRouter() *gin.Engine {
     router := gin.Default()
 
-    router.GET("/list", service.ListUsers)
+    router.GET("/list", service.ListAll)
 
     router.POST("/add", service.Store)
 

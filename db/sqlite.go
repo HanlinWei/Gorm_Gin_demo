@@ -4,7 +4,7 @@ import (
     "github.com/jinzhu/gorm"
     _ "github.com/jinzhu/gorm/dialects/sqlite"
 	"fmt"
-	// model "../model"
+	model "../model"
 )
 
 var Eloquent *gorm.DB
@@ -18,5 +18,5 @@ func init() {
 	}
 	defer Eloquent.Close()
 
-	// Eloquent.AutoMigrate(&model.User{})
+	Eloquent.AutoMigrate(&model.User{})
 }
