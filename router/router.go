@@ -8,13 +8,13 @@ import (
 func InitRouter() *gin.Engine {
     router := gin.Default()
 
-    router.GET("/list", service.ListAll)
+    router.GET("/list/", service.ListAll)
 
-    router.POST("/add", service.Store)
+    router.GET("/add/:amount/:order_id/:user_name/:status/:file_url/", service.Store)
 
-    router.PUT("/Update/:id", service.Update)
+    router.GET("/update/:amount/:order_id/:user_name/:status/:file_url/", service.Update)
 
-    router.DELETE("/Destroy/:id", service.Destroy)
+    router.GET("/delete/:order_id/:user_name/", service.Delete)
 
     return router
 }
