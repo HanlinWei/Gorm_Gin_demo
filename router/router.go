@@ -10,13 +10,16 @@ func InitRouter() *gin.Engine {
 
     router.GET("/list/", handler.ListAll)
 
-    router.GET("/add/:amount/:order_id/:user_name/:status/:file_url/", handler.Store)
+    // The request responds to a url matching:  /add?amount=553.5&order_id=9&user_name=wabuguan&status=online&file_url=abc.txt
+    router.GET("/add", handler.Store)
 
-    router.GET("/update/:amount/:order_id/:user_name/:status/:file_url/", handler.Update)
+    router.GET("/update", handler.Update)
 
-    router.GET("/delete/:order_id/:user_name/", handler.Delete)
+    router.GET("/delete", handler.Delete)
 
-    router.GET("/fuzzysearch/:keyword/:sortby/:desc/", handler.FuzzySearch)
+    router.GET("/fuzzysearch", handler.FuzzySearch)
+
+    router.POST("/upload", handler.Upload)
 
     return router
 }

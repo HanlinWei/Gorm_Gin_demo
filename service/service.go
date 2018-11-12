@@ -7,6 +7,8 @@ import (
     // "strconv"
     "time"
     "fmt"
+    "github.com/tealeg/xlsx"
+    "reflect"
 )
 
 // 创建一个DemoOrder
@@ -29,7 +31,15 @@ func Change(do *model.DemoOrder) bool {
         fmt.Println("No such record to update")
         return true
     }
-    orm.Eloquent.Model(&target).Updates(map[string]interface{}{"Amount": (*do).Amount, "Status": (*do).Status, "File_url": (*do).File_url})
+    if (*do).Amount > 0 {
+        orm.Eloquent.Model(&target).Update("Amount", (*do).Amount)
+    }
+    if len((*do).Status) > 0 {
+        orm.Eloquent.Model(&target).Update("Status", (*do).Status)
+    }
+    if len((*do).File_url) > 0 {
+        orm.Eloquent.Model(&target).Update("File_url", (*do).File_url)
+    }
     return false
 }
 
@@ -74,5 +84,40 @@ func FuzzySearch(keyword string, sortby string, desc bool) (allrecord []model.De
     }
     length = len(allrecord)
     return allrecord, length
+}
+
+// 数据以excel形式导出来
+func ExportExcel() {
+
+    // 获取数据库中所有数据
+    x := "2017-02-27 17:30:20"
+    p, _ := time.Parse(x, x)
+    result := SelectByCreatedAt(p, time.Now())
+
+    var file *xlsx.File
+    var sheet *xlsx.Sheet
+    var row *xlsx.Row
+    var cell *xlsx.Cell
+    var err error
+
+    file = xlsx.NewFile()
+    sheet, err = file.AddSheet("Sheet1")
+    if err != nil {
+        fmt.Printf(err.Error())
+    }
+    for _, record := range result {
+        row = sheet.AddRow()
+        t := reflect.TypeOf(record)
+        v := reflect.ValueOf(record)
+        for k := 0; k < t.NumField(); k++ {
+            cell = row.AddCell()
+            cell.Value = fmt.Sprintf("%v", v.Field(k).Interface())
+			// cell.value = fmt.Sprintf("%s -- %v \n", t.Field(k).Name, v.Field(k).Interface())   
+	    }
+    }
+    err = file.Save("MyXLSXFile.xlsx")
+    if err != nil {
+        fmt.Printf(err.Error())
+    }
 }
 
