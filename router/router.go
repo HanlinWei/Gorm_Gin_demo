@@ -2,19 +2,21 @@ package router
 
 import (
     "github.com/gin-gonic/gin"
-    service "../service"
+    handler "../handler"
 )
 
 func InitRouter() *gin.Engine {
     router := gin.Default()
 
-    router.GET("/list/", service.ListAll)
+    router.GET("/list/", handler.ListAll)
 
-    router.GET("/add/:amount/:order_id/:user_name/:status/:file_url/", service.Store)
+    router.GET("/add/:amount/:order_id/:user_name/:status/:file_url/", handler.Store)
 
-    router.GET("/update/:amount/:order_id/:user_name/:status/:file_url/", service.Update)
+    router.GET("/update/:amount/:order_id/:user_name/:status/:file_url/", handler.Update)
 
-    router.GET("/delete/:order_id/:user_name/", service.Delete)
+    router.GET("/delete/:order_id/:user_name/", handler.Delete)
+
+    router.GET("/fuzzysearch/:keyword/:sortby/:desc/", handler.FuzzySearch)
 
     return router
 }

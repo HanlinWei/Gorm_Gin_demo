@@ -1,108 +1,78 @@
 package service
 
 import (
-    "github.com/gin-gonic/gin"
 	model "../model"
 	orm "../db"
-    http "net/http"
-    "strconv"
     "strings"
+    // "strconv"
     "time"
-    // "fmt"
+    "fmt"
 )
 
-// 列出所有数据
-func ListAll(c *gin.Context) {
-    x := "2017-02-27 17:30:20"
-    p, _ := time.Parse("2006-01-02 15:04:05", x)
-    result := orm.SelectByCreatedAt(p, time.Now())
-    c.JSON(http.StatusOK, gin.H{
-        "code": 1,
-        "message": "列出所有数据",
-        "data": result,
-    })
+// 创建一个DemoOrder
+func CreateDemoOrder(amount float64, orderid string, username string, status string, fileurl string) *model.DemoOrder {
+    var do *model.DemoOrder = &model.DemoOrder{Amount:amount, Order_id:orderid, User_name:username, Status:status, File_url:fileurl}
+    return do
 }
 
-// 模糊查找
-func FuzzySearch(c *gin.Context) {
-    query := strings.Split(c.Param("query"), ":query")[0]
-    
+// 添加
+func Insert(do *model.DemoOrder) bool {
+    orm.Eloquent.Create(do)
+    return orm.Eloquent.NewRecord(*do)
 }
 
-
-// 解析url参数
-func solveParam(c *gin.Context) (amount float64, order_id string, user_name string, status string, file_url string, err error) {
-    amount, err = strconv.ParseFloat(strings.Split(c.Param("amount"), ":amount")[0], 64)
-    order_id = strings.Split(c.Param("order_id"), ":order_id")[0]
-    user_name = strings.Split(c.Param("user_name"), ":user_name")[0]
-    status = strings.Split(c.Param("status"), ":status")[0]
-    file_url = strings.Split(c.Param("file_url"), ":file_url")[0]
-    if err != nil {
-        c.JSON(http.StatusOK, gin.H{
-            "code":  0,
-            "message": "amount format false" + err.Error(),
-        })
+// 修改
+func Change(do *model.DemoOrder) bool {
+	var target *model.DemoOrder = new(model.DemoOrder)
+    orm.Eloquent.Where("Order_id = ? AND User_name = ?", (*do).Order_id, (*do).User_name).First(&target)
+    if target == nil {
+        fmt.Println("No such record to update")
+        return true
     }
-    return amount, order_id, user_name, status, file_url, err
+    orm.Eloquent.Model(&target).Updates(map[string]interface{}{"Amount": (*do).Amount, "Status": (*do).Status, "File_url": (*do).File_url})
+    return false
 }
 
-// 添加和修改数据的基本操作，只是替换其中的orm接口
-func basicOperation(c *gin.Context,fun func(do *model.DemoOrder) (bool), task string) {
-    amount, order_id, user_name, status, file_url, err:= solveParam(c)
-    if err != nil {
-        return
+// 删除
+func Delete(order_id string, user_name string) bool {
+	var target *model.DemoOrder = new(model.DemoOrder)
+    orm.Eloquent.Where("Order_id = ? AND User_name = ?", order_id, user_name).First(&target)
+    if target == nil {
+        fmt.Println("No such record to delete")
+        return true
     }
+    orm.Eloquent.Where("Order_id = ? AND User_name = ?", order_id, user_name).Delete(model.DemoOrder{})
+    return false
+}
 
-    new_record := model.CreateDemoOrder(amount, order_id, user_name, status, file_url)
-
-    failed := fun(new_record)
-    if failed {
-        c.JSON(http.StatusOK, gin.H{
-            "code":  0,
-            "message": task + "失败",
-        })
-        return
+func SelectByCreatedAt(start time.Time, end time.Time) ([]model.DemoOrder){
+    var result []model.DemoOrder
+    query := orm.Eloquent.Where("created_at BETWEEN ? AND ?", start, end).Find(&result)
+    if query.Error!=nil {
+        fmt.Println("query failed")
+        return nil
     }
-
-    c.JSON(http.StatusOK, gin.H{
-        "code":  1,
-        "message": task + "成功",
-        "order_id": order_id,
-        "user_name": user_name,
-        "status": status,
-        "file_url": file_url,
-        "amount": amount,
-    })
+    fmt.Println(result)
+    return result
 }
 
-// 添加数据
-func Store(c *gin.Context) {
-    basicOperation(c, orm.Insert, "创建")
-}
 
-// 修改数据
-func Update(c *gin.Context) {
-    basicOperation(c, orm.Change, "更新")
-}
-
-// 删除数据
-func Delete(c *gin.Context) {
-    order_id := strings.Split(c.Param("order_id"), ":order_id")[0]
-    user_name := strings.Split(c.Param("user_name"), ":user_name")[0]
-
-    failed := orm.Delete(order_id, user_name)
-    if failed {
-        c.JSON(http.StatusOK, gin.H{
-            "code":  0,
-            "message": "删除失败",
-        })
-        return
+// 模糊查找，可以限定按照金额或者创建时间排序
+func FuzzySearch(keyword string, sortby string, desc bool) (allrecord []model.DemoOrder, length int) {
+    if !strings.EqualFold(sortby, "created_at") && !strings.EqualFold(sortby, "amount") {
+        fmt.Println("Order condition is invalid.")
+        return nil,1
     }
-
-    c.JSON(http.StatusOK, gin.H{
-        "code":  1,
-        "message": "删除成功",
-        "order_id": order_id,
-        "user_name": user_name,
-    })
+    if desc {
+        sortby = sortby + " DESC"
+    }
+    keyword = "%"+keyword+"%"
+    query := orm.Eloquent.Where("User_name LIKE ?", keyword).Or("Status LIKE ?", keyword).Or("File_url LIKE ?", keyword).Or("Order_id LIKE ?", keyword).Order(sortby, true).Find(&allrecord)
+    if query.Error!=nil {
+        fmt.Println("query failed")
+        return nil, 0
+    }
+    length = len(allrecord)
+    return allrecord, length
 }
+
