@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 var sample model.DemoOrder = model.DemoOrder{gorm.Model{}, 11.22, "test-Order_id", "test-User_name", "test-Status", "test-File_url"}
 
 func Test_CreateDemoOrder(t *testing.T) {
+	fmt.Println("zzzzzzzzzzzzzzzzz")
 	created := CreateDemoOrder(11.22, "test-Order_id", "test-User_name", "test-Status", "test-File_url")
 	if (*created) != sample {
 		t.Error("Test_CreateDemoOrder 测试失败")
@@ -21,21 +23,21 @@ func Test_CreateDemoOrder(t *testing.T) {
 
 func Test_Insert(t *testing.T) {
 	created := Insert(&sample)
-	if created {
+	if created != nil {
 		t.Error("Test_Insert 测试失败\n")
 	}
 }
 
 func Test_Change(t *testing.T) {
 	created := Change(&sample)
-	if created {
+	if created != nil {
 		t.Error("Test_Change 测试失败\n")
 	}
 }
 
 func Test_Delete(t *testing.T) {
 	created := Delete(sample.Order_id, sample.User_name)
-	if created {
+	if created != nil {
 		t.Error("Test_Delete 测试失败\n")
 	}
 }

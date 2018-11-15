@@ -164,6 +164,7 @@ func BasicOperation(c *gin.Context, service_func func(do *model.DemoOrder) error
 
 	failed := service_func(new_record)
 	if failed != nil {
+		log.Println(failed)
 		c.JSON(http.StatusOK, gin.H{
 			"code":    0,
 			"message": task + "失败",
