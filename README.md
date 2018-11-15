@@ -14,8 +14,7 @@
 
     ```go
     ├── db   (数据库配置， GORM配置)
-    │    ├── sqlite.go
-    │    └── user.go
+    │    └── database.go
     ├── model
     │    └── model.go 
     ├── router  (Gin router)
@@ -23,11 +22,12 @@
     ├── service
     │    └── service.go 
     ├── handler  (Gin handler)
+    │    └── handler.go
     ├── README.md
     └── main.go
     ```
 
-2. 实现 4个需求：（已完成）
+2. 实现 4个需求：
    ​                        1） 创建 demo_order
    ​                        2） 更新 demo_order （amount、status、file_url）
    ​                        3） 获取 demo_order 详情
@@ -35,4 +35,9 @@
 
 
 
-3. 根据需求编写 Restful Api接口（已完成）
+3. 根据需求编写 Restful Api接口
+4. service 下代码需要编写测试
+5. 需要实现一个 Gorm 事物 SQL
+6. 需要实现一个Gin 文件上传的功能， 并且更新 demo_order ： file_url
+7. 同时实现Gin 文件下载
+8. 使用 https://github.com/tealeg/xlsx 这个库 将demo_order 所有数据以excel形式导出来(可以下载)
