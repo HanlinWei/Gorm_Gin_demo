@@ -2,7 +2,7 @@ package handler
 
 import (
     "github.com/gin-gonic/gin"
-	model "../model"
+	// model "../model"
 	service "../service"
     http "net/http"
     "strconv"
@@ -68,57 +68,14 @@ func FuzzySearch(c *gin.Context) {
     })
 }
 
-// 解析url参数
-func solveParam(c *gin.Context) (amount float64, order_id string, user_name string, status string, file_url string, err error) {
-    amount, err = strconv.ParseFloat(c.DefaultQuery("amount", "-1"), 64)
-    order_id = c.Query("order_id")
-    user_name = c.Query("user_name")
-    status = c.Query("status")
-    file_url = c.Query("file_url")
-    return amount, order_id, user_name, status, file_url, err
-}
-
-// 添加和修改数据的基本操作，只是替换其中的service接口
-func basicOperation(c *gin.Context,service_func func(do *model.DemoOrder) (bool), task string) {
-    amount, order_id, user_name, status, file_url, err:= solveParam(c)
-    if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-            "code":  0,
-            "message": "amount formate false" + err.Error(),
-        })
-        return
-    }
-
-    new_record := service.CreateDemoOrder(amount, order_id, user_name, status, file_url)
-
-    failed := service_func(new_record)
-    if failed {
-        c.JSON(http.StatusOK, gin.H{
-            "code":  0,
-            "message": task + "失败",
-        })
-        return
-    }
-
-    c.JSON(http.StatusOK, gin.H{
-        "code":  1,
-        "message": task + "成功",
-        "order_id": order_id,
-        "user_name": user_name,
-        "status": status,
-        "file_url": file_url,
-        "amount": amount,
-    })
-}
-
 // 添加数据
 func Store(c *gin.Context) {
-    basicOperation(c, service.Insert, "创建")
+    service.BasicOperation(c, service.Insert, "创建")
 }
 
 // 修改数据
 func Update(c *gin.Context) {
-    basicOperation(c, service.Change, "更新")
+    service.BasicOperation(c, service.Change, "更新")
 }
 
 // 删除数据
@@ -145,12 +102,24 @@ func Delete(c *gin.Context) {
 
 // 上传文件
 func Upload(c *gin.Context) {
+
+    amount, order_id, user_name, status, file_url, err := service.SolveParam(c)
+    if len(order_id)>0 && len(user_name)>0 {
+        if err != nil { }
+        new_record := service.CreateDemoOrder(amount, order_id, user_name, status, file_url)
+        failed := service.Change(new_record)
+        if failed {
+            // c.String(http.StatusBadRequest, "Can't find the user.\n")
+            return
+        }
+    }
+        
     file, header, err := c.Request.FormFile("file")
     if err != nil {
         c.String(http.StatusBadRequest, err.Error())
         log.Println("no such file: " + err.Error())
     }
-    
+
     filename := header.Filename
     fmt.Println(file, err, filename)
     fmt.Printf("Type: %T %T %T\n", file, err, filename)
@@ -170,4 +139,8 @@ func Upload(c *gin.Context) {
 	}
 
 	c.String(http.StatusCreated, "upload successful \n")
+}
+
+func ExportExcel() string{
+    return service.ExportExcel()
 }

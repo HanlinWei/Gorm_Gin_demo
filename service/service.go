@@ -2,12 +2,14 @@ package service
 
 import (
 	model "../model"
-	orm "../db"
+    orm "../db"
+    http "net/http"
     "strings"
-    // "strconv"
+    "strconv"
     "time"
     "fmt"
     "github.com/tealeg/xlsx"
+    "github.com/gin-gonic/gin"
     "reflect"
 )
 
@@ -87,7 +89,7 @@ func FuzzySearch(keyword string, sortby string, desc bool) (allrecord []model.De
 }
 
 // 数据以excel形式导出来
-func ExportExcel() {
+func ExportExcel() string{
 
     // 获取数据库中所有数据
     x := "2017-02-27 17:30:20"
@@ -100,11 +102,13 @@ func ExportExcel() {
     var cell *xlsx.Cell
     var err error
 
+    // 创建excel表格
     file = xlsx.NewFile()
     sheet, err = file.AddSheet("Sheet1")
     if err != nil {
         fmt.Printf(err.Error())
     }
+    // 写入数据
     for _, record := range result {
         row = sheet.AddRow()
         t := reflect.TypeOf(record)
@@ -115,9 +119,54 @@ func ExportExcel() {
 			// cell.value = fmt.Sprintf("%s -- %v \n", t.Field(k).Name, v.Field(k).Interface())   
 	    }
     }
-    err = file.Save("MyXLSXFile.xlsx")
+    // 关闭文件
+    excel := "./data.xlsx"
+    err = file.Save("data.xlsx")
     if err != nil {
         fmt.Printf(err.Error())
     }
+    return excel
 }
 
+// 解析url参数
+func SolveParam(c *gin.Context) (amount float64, order_id string, user_name string, status string, file_url string, err error) {
+    amount, err = strconv.ParseFloat(c.DefaultQuery("amount", "-1"), 64)
+    order_id = c.Query("order_id")
+    user_name = c.Query("user_name")
+    status = c.Query("status")
+    file_url = c.Query("file_url")
+    return amount, order_id, user_name, status, file_url, err
+}
+
+// 添加和修改数据的基本操作，只是替换其中的service接口
+func BasicOperation(c *gin.Context,service_func func(do *model.DemoOrder) (bool), task string) {
+    amount, order_id, user_name, status, file_url, err:= SolveParam(c)
+    if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+            "code":  0,
+            "message": "amount formate false" + err.Error(),
+        })
+        return
+    }
+
+    new_record := CreateDemoOrder(amount, order_id, user_name, status, file_url)
+
+    failed := service_func(new_record)
+    if failed {
+        c.JSON(http.StatusOK, gin.H{
+            "code":  0,
+            "message": task + "失败",
+        })
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "code":  1,
+        "message": task + "成功",
+        "order_id": order_id,
+        "user_name": user_name,
+        "status": status,
+        "file_url": file_url,
+        "amount": amount,
+    })
+}

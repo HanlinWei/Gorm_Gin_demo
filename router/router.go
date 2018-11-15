@@ -3,6 +3,7 @@ package router
 import (
     "github.com/gin-gonic/gin"
     handler "../handler"
+    "net/http"
 )
 
 func InitRouter() *gin.Engine {
@@ -19,7 +20,17 @@ func InitRouter() *gin.Engine {
 
     router.GET("/fuzzysearch", handler.FuzzySearch)
 
+    // curl -X POST http://localhost:8080/upload -F"file=@/home/qydev/image.jpg" -H "Content-Type: multipart/form-data"
+    // curl -X POST http://localhost:8080/upload?order_id=1&user_name=Alice&file_url=image.jpg -F"file=@/home/qydev/image.jpg" -H "Content-Type: multipart/form-data"
     router.POST("/upload", handler.Upload)
+
+    // router.Static("/db", "./db")
+    
+    router.StaticFS("/more_static", http.Dir("./db"))
+    
+    router.StaticFile("/export_excel.xlsx", handler.ExportExcel())
+    
+    router.StaticFile("/favicon.ico", "./resource/favicon.ico")
 
     return router
 }
